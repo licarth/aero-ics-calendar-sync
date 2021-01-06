@@ -1,4 +1,5 @@
-const escapeHtml = require('escape-html');
+import { HttpFunction } from "@google-cloud/functions-framework/build/src/functions";
+import escapeHtml from "escape-html";
 
 /**
  * HTTP Cloud Function.
@@ -8,6 +9,6 @@ const escapeHtml = require('escape-html');
  * @param {Object} res Cloud Function response context.
  *                     More info: https://expressjs.com/en/api.html#res
  */
-exports.helloHttp = (req, res) => {
-  res.send(`Hello ${escapeHtml(req.query.name || req.body.name || 'World')}!`);
+export const flights: HttpFunction = (req, res) => {
+  res.send(`Hello ${escapeHtml(req.query.name || req.body.name || "World")}!`);
 };
