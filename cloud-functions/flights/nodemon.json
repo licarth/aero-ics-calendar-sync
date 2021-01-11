@@ -1,0 +1,9 @@
+{
+  "watch": ["src/"],
+  "env": {
+    "NODE_ENV": "development"
+  },
+  "ext": "ts,tsx",
+  "delay": 200,
+  "exec": "ts-node ./src/dev.ts"   
+}
