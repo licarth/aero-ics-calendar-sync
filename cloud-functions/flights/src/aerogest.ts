@@ -1,17 +1,23 @@
 import axios from "axios";
-import { add, format, parse } from "date-fns";
+import { add as addToDate, format, parse, isAfter } from "date-fns";
 import { zonedTimeToUtc } from "date-fns-tz";
+import * as admin from "firebase-admin";
 import fs from "fs";
-
 // @ts-ignore
 import JSSoup from "jssoup";
 import rp from "request-promise";
 import { Cookie, parseString } from "set-cookie-parser";
-import { Opaque } from "./opaque";
+import { collection, set, get } from "typesaurus";
+import { LoginSession } from "./domain/LoginSession";
+import { Email } from "./domain/Email";
+import { Opaque } from "./domain/opaque";
+
+admin.initializeApp();
+const loginSessions = collection<LoginSession>("login-sessions");
 
 const AEROGEST_BASE = "https://online.aerogest.fr";
 type AerogestApiParams = {
-  email: string;
+  email: Email;
   password: string;
 };
 
@@ -49,6 +55,14 @@ type ApiFlight = {
 
 export interface AerogestApi {
   login: () => Promise<void>;
+  loadSession: () => Promise<LoginSession | null>;
+  persistSession: ({
+    cookie,
+    pilotId,
+  }: {
+    cookie: Cookie;
+    pilotId: number;
+  }) => Promise<void>;
   getAllScheduledFlights: () => Promise<AerogestFlight[]>;
 }
 
@@ -56,7 +70,6 @@ export class ProductionAerogestApi implements AerogestApi {
   private email: string;
   private password: string;
   private requestCookie?: Cookie;
-  private websiteCookie?: Cookie;
   private pilotId?: number;
 
   constructor({ email, password }: AerogestApiParams) {
@@ -64,12 +77,43 @@ export class ProductionAerogestApi implements AerogestApi {
     this.password = password;
   }
 
+  persistSession = async ({
+    cookie,
+    pilotId,
+  }: {
+    cookie: Cookie;
+    pilotId: number;
+  }) => {
+    await set(loginSessions, this.email, {
+      cookie,
+      pilotId,
+      email: this.email,
+    }).then(
+      () => {},
+      () => {},
+    );
+  };
+
+  loadSession = async () => {
+    return await get(loginSessions, this.email).then((docOrNull) => {
+      if (docOrNull) {
+        const { cookie, email, pilotId } = docOrNull.data;
+        if (cookie.expires && isAfter(cookie.expires, new Date())) {
+          console.log(`Using existing cookie for ${email}`);
+          this.email = email;
+          this.pilotId = pilotId;
+          this.requestCookie = cookie;
+          return docOrNull.data;
+        } else return null;
+      } else return null;
+    });
+  };
+
   login = async () => {
     const { data, headers } = await axios.get(
       `${AEROGEST_BASE}/Connection/logon`,
     );
     const websiteCookie = parseString(headers["set-cookie"][0]);
-    this.websiteCookie = websiteCookie;
     const soup = new JSSoup(data);
     const requestVerificationToken = soup.find("input", {
       name: "__RequestVerificationToken",
@@ -81,29 +125,38 @@ export class ProductionAerogestApi implements AerogestApi {
       form: {
         login: this.email,
         password: this.password,
-        rememberMe: "false",
+        rememberMe: "true",
         __RequestVerificationToken: requestVerificationToken,
       },
       simple: false, //To avoid errors on 302
       headers: { Cookie: `${websiteCookie.name}=${websiteCookie.value}` },
-      transform: (body, response, resolveWithFullResponse) => {
+      transform: (body, response) => {
         return { headers: response.headers, data: body };
       },
     });
     this.requestCookie = parseString(response.headers["set-cookie"][0]);
-
     const myBookingsPageData = await rp.get({
       uri: `${AEROGEST_BASE}/Schedule/Booking/MyBookings`,
       headers: {
         Cookie: `${this.requestCookie?.name}=${this.requestCookie?.value}`,
       },
     });
-    this.pilotId = new JSSoup(myBookingsPageData).find("input", {
+    const pilotId = new JSSoup(myBookingsPageData).find("input", {
       id: "idCurrentPilot",
     }).attrs.value;
+    if (!pilotId) {
+      throw new Error("Pilot id could not be retrieved!");
+    } else {
+      this.pilotId = Number(pilotId);
+      await this.persistSession({
+        cookie: this.requestCookie,
+        pilotId,
+      });
+    }
   };
 
   getAllScheduledFlights = async (): Promise<AerogestFlight[]> => {
+    console.log("Getting flights");
     const now = new Date();
     const flights = await rp({
       uri: `${AEROGEST_BASE}/api/Schedule/BookingAPI/BookingsList`,
@@ -111,7 +164,7 @@ export class ProductionAerogestApi implements AerogestApi {
       json: true,
       form: {
         d: format(now, "yyyyMMdd"),
-        f: format(add(now, { months: 2 }), "yyyyMMdd"),
+        f: format(addToDate(now, { months: 2 }), "yyyyMMdd"),
         i: this.pilotId,
         t: "usr",
       },
@@ -144,6 +197,8 @@ const mapToAerogestFlights = (flights: ApiFlight[]) =>
   });
 
 export class FakeAerogestApi implements AerogestApi {
+  loadSession: () => Promise<LoginSession | null> = () => Promise.resolve(null);
+  persistSession: () => Promise<void> = () => Promise.resolve();
   login: () => Promise<void> = () => Promise.resolve();
   getAllScheduledFlights: () => Promise<AerogestFlight[]> = () => {
     return Promise.resolve(

@@ -1,10 +1,11 @@
 import { HttpFunction } from "@google-cloud/functions-framework/build/src/functions";
 import { format } from "date-fns-tz";
 import { FakeAerogestApi, ProductionAerogestApi } from "./aerogest";
+import { Email } from "./domain/Email";
 const fakeAerogestApi = process.env.FAKE_AEROGEST_API === "true";
 
 export const flights: HttpFunction = async (req, res) => {
-  const email = req.query?.email ? req.query.email.toString() : null;
+  const email = req.query?.email ? (req.query.email.toString() as Email) : null;
   const password = req.query?.password ? req.query?.password.toString() : null;
   const lastUpdateInEventDescription =
     req.query?.lastUpdateInEventDescription === "0" ? false : true;
@@ -27,8 +28,21 @@ export const flights: HttpFunction = async (req, res) => {
 
   //Check if login is necessary (if there are some )
 
-  await aerogest.login();
-  const flights = await aerogest.getAllScheduledFlights();
+  const session = await aerogest.loadSession();
+  if (!session) {
+    await aerogest.login();
+  }
+  let flights;
+  try {
+    flights = await aerogest.getAllScheduledFlights();
+  } catch (e) {
+    console.log(
+      `Getting flights for ${email} failed, trying to login and get them again.`,
+    );
+    await aerogest.login();
+    flights = await aerogest.getAllScheduledFlights();
+  }
+
   const events = flights.map(
     ({
       aerogestId,
