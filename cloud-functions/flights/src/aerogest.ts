@@ -10,6 +10,7 @@ import { Cookie, parseString } from "set-cookie-parser";
 import { collection, set, get } from "typesaurus";
 import { LoginSession } from "./domain/LoginSession";
 import { Email } from "./domain/Email";
+import { AerogestFlight } from "./domain/AerogestFlight";
 import { Opaque } from "./domain/opaque";
 
 admin.initializeApp();
@@ -19,26 +20,6 @@ const AEROGEST_BASE = "https://online.aerogest.fr";
 type AerogestApiParams = {
   email: Email;
   password: string;
-};
-
-export type AerogestId = Opaque<"AerogestId", number>;
-export type Pilot = Opaque<"Pilot", string>;
-export type Aircraft = Opaque<"Aircraft", string>;
-export type Instructor = Opaque<"Instructor", string>;
-export type FlightDescription = Opaque<"FlightDescription", string>;
-export type Airport = Opaque<"Airport", string>;
-export type Title = Opaque<"Title", string>;
-
-type AerogestFlight = {
-  aerogestId: AerogestId;
-  dateFrom: Date;
-  dateTo: Date;
-  pilot: Pilot;
-  aircraft: Aircraft;
-  instructor: Instructor;
-  description: FlightDescription;
-  destination: Airport;
-  title: Title;
 };
 
 type ApiFlight = {

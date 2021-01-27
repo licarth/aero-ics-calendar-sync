@@ -127,5 +127,9 @@ const chunk = (str: string, n: number) => {
 };
 
 const formatDescription = (description: string, lineSize = 50) => {
-  return "💬 " + chunk(description, lineSize).join("\r\n ");
+  const descriptionLines = description.split("\n");
+  const chunkedDescriptionLines = descriptionLines.map((line) =>
+    chunk(line, lineSize).join("\r\n "),
+  );
+  return "💬 " + chunkedDescriptionLines.join("\\n\r\n ");
 };

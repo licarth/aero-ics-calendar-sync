@@ -9,8 +9,8 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "deploy": "npm run build && npm run gcloud-deploy",
     "dev": "nodemon",
-    "gcloud-deploy": "gcloud functions deploy aero-ics-calendar-sync-staging --runtime nodejs12 --trigger-http --allow-unauthenticated --region us-central1 --entry-point flights",
-    "local-deploy": "functions-emulator deploy aero-ics-calendar-sync-staging --trigger-http --allow-unauthenticated --region us-central1 --entry-point flights"
+    "gcloud-deploy": "gcloud --project outintown-eu functions deploy aero-ics-calendar-sync --runtime nodejs12 --trigger-http --allow-unauthenticated --region us-central1 --entry-point flights",
+    "local-deploy": "functions-emulator deploy aero-ics-calendar-sync --trigger-http --allow-unauthenticated --region us-central1 --entry-point flights"
   },
   "author": "Thomas Carli <thomas.carli@gmail.com>",
   "license": "MIT",
