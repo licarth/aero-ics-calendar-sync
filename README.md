@@ -1,6 +1,8 @@
 # `aero-ics-calendar-sync`
 
 🇬🇧 [English readme here](README_EN.md).
+
+Le calendrier montre les vols programmés dans l'intervalle [t - 2 mois, t + 2 mois].
 ## Utiliser le calendrier
 ### Dans iOS (iPad, iPhone)
 

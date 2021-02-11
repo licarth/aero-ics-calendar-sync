@@ -144,7 +144,7 @@ export class ProductionAerogestApi implements AerogestApi {
       method: "POST",
       json: true,
       form: {
-        d: format(now, "yyyyMMdd"),
+        d: format(addToDate(now, { months: -2 }), "yyyyMMdd"),
         f: format(addToDate(now, { months: 2 }), "yyyyMMdd"),
         i: this.pilotId,
         t: "usr",

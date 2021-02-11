@@ -1,5 +1,7 @@
 # `aero-ics-calendar-sync`
 
+The calendar shows flilghts in the following interval : [t - 2 months, t + 2 months].
+
 ## Use this tool
 ### With iOS (iPad, iPhone)
 <p float="left">
