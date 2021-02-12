@@ -1,4 +1,7 @@
 version: 2.1
+orbs:
+  node: circleci/node@4.1.0
+  gcp-cli: circleci/gcp-cli@2.1.0
 
 jobs:
   flights:
@@ -8,12 +11,15 @@ jobs:
     steps:
       - checkout:
           path: ~/project
-      - run: yarn install
+      - node/install-packages:
+          pkg-manager: yarn
       - run: yarn build
       - when:
           condition:
             equal: [master, << pipeline.git.branch >>]
           steps:
+            - gcp-cli/install
+            - gcp-cli/initialize
             - run: yarn gcloud-deploy
 
 workflows:
