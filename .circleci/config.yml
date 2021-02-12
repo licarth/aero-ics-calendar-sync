@@ -1,0 +1,22 @@
+version: 2.1
+
+jobs:
+  flights:
+    working_directory: ~/project/cloud-functions/flights
+    docker:
+      - image: circleci/node:12
+    steps:
+      - checkout:
+          path: ~/project
+      - run: yarn install
+      - run: yarn build
+      - when:
+          condition:
+            equal: [master, << pipeline.git.branch >>]
+          steps:
+            - run: yarn gcloud-deploy
+
+workflows:
+  ci:
+    jobs:
+      - flights
