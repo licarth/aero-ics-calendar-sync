@@ -71,7 +71,7 @@ export class ProductionAerogestApi implements AerogestApi {
       email: this.email,
     }).then(
       () => {},
-      () => {},
+      () => {}
     );
   };
 
@@ -92,7 +92,7 @@ export class ProductionAerogestApi implements AerogestApi {
 
   login = async () => {
     const { data, headers } = await axios.get(
-      `${AEROGEST_BASE}/Connection/logon`,
+      `${AEROGEST_BASE}/Connection/logon`
     );
     const websiteCookie = parseString(headers["set-cookie"][0]);
     const soup = new JSSoup(data);
@@ -155,6 +155,10 @@ export class ProductionAerogestApi implements AerogestApi {
       },
     });
 
+    if (flights === undefined) {
+      // It means there are just no flights !
+      return [];
+    }
     return mapToAerogestFlights(flights);
   };
 
@@ -185,9 +189,9 @@ export class FakeAerogestApi implements AerogestApi {
     return Promise.resolve(
       mapToAerogestFlights(
         JSON.parse(
-          fs.readFileSync(__dirname + "/api_response.json").toString(),
-        ) as ApiFlight[],
-      ),
+          fs.readFileSync(__dirname + "/api_response.json").toString()
+        ) as ApiFlight[]
+      )
     );
   };
 }
@@ -195,6 +199,6 @@ export class FakeAerogestApi implements AerogestApi {
 function aerogestDateToUTCDate(d: string): any {
   return zonedTimeToUtc(
     format(parse(d, "dd/MM/yyyy HH:mm", new Date()), "yyyy-MM-dd HH:mm:ss"),
-    "Europe/Paris",
+    "Europe/Paris"
   );
 }
